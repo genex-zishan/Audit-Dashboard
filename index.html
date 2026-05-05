@@ -471,6 +471,30 @@ tbody td { padding: 10px 14px; color: var(--text-primary); vertical-align: middl
 #toast.success { border-color: var(--green); color: var(--green); }
 #toast.error   { border-color: var(--red);   color: var(--red);   }
 
+/* ── VIEW TOGGLE (grouped / flat) ── */
+.view-toggle-group { display: flex; gap: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.view-toggle-btn {
+  padding: 5px 14px; font-size: 0.75rem; font-weight: 600; cursor: pointer;
+  background: var(--bg-elevated); color: var(--text-muted); border: none; transition: var(--transition);
+}
+.view-toggle-btn:first-child { border-right: 1px solid var(--border); }
+.view-toggle-btn.active { background: var(--blue-dim); color: var(--blue); }
+.view-toggle-btn:hover:not(.active) { color: var(--text-primary); }
+
+/* Grouped row */
+tr.grouped-row td { font-weight: 600; }
+tr.grouped-row { cursor: pointer; }
+tr.grouped-row:hover td { background: var(--bg-hover); }
+tr.grouped-row td:first-child { position: relative; }
+.expand-icon { display: inline-block; margin-right: 6px; transition: transform 0.2s; font-size: 0.7rem; color: var(--text-muted); }
+.expanded .expand-icon { transform: rotate(90deg); }
+
+/* Drilldown sub-rows */
+tr.drilldown-row { display: none; }
+tr.drilldown-row.visible { display: table-row; }
+tr.drilldown-row td { background: var(--bg-base); font-size: 0.76rem; padding: 7px 14px; border-bottom: 1px solid var(--border-muted); }
+tr.drilldown-row td:first-child { padding-left: 40px; color: var(--text-muted); }
+
 /* ── FOOTER ── */
 .footer {
   text-align: center; padding: 20px; font-size: 0.72rem; color: var(--text-muted);
@@ -790,11 +814,29 @@ tbody td { padding: 10px 14px; color: var(--text-primary); vertical-align: middl
       <div id="lbGXCE"></div>
     </div>
     <div class="lb-card">
-      <h3>💫 Top Empathy — GP</h3>
+      <h3>📉 Top Empathy Offenders — GP</h3>
+      <div id="lbGPEmpOff"></div>
+    </div>
+    <div class="lb-card">
+      <h3>📉 Top Empathy Offenders — GENEX</h3>
+      <div id="lbGXEmpOff"></div>
+    </div>
+  </div>
+  <div class="lb-grid" style="margin-top:16px">
+    <div class="lb-card">
+      <h3>🏅 Top CE Scorers — GP</h3>
+      <div id="lbGPCEScore"></div>
+    </div>
+    <div class="lb-card">
+      <h3>🏅 Top CE Scorers — GENEX</h3>
+      <div id="lbGXCEScore"></div>
+    </div>
+    <div class="lb-card">
+      <h3>💫 Top Empathy Scorers — GP</h3>
       <div id="lbGPEmp"></div>
     </div>
     <div class="lb-card">
-      <h3>💫 Top Empathy — GENEX</h3>
+      <h3>💫 Top Empathy Scorers — GENEX</h3>
       <div id="lbGXEmp"></div>
     </div>
   </div>
@@ -805,6 +847,10 @@ tbody td { padding: 10px 14px; color: var(--text-primary); vertical-align: middl
     <div class="table-header">
       <h3>Audit Records <span style="color:var(--text-muted);font-weight:400;font-size:0.78rem" id="tableCount"></span></h3>
       <div class="table-controls">
+        <div class="view-toggle-group">
+          <button class="view-toggle-btn active" id="btnGrouped" onclick="setAuditView('grouped')">👥 Grouped by Agent</button>
+          <button class="view-toggle-btn" id="btnFlat" onclick="setAuditView('flat')">📄 All Records</button>
+        </div>
         <span style="font-size:0.75rem;color:var(--text-muted)">Rows per page:</span>
         <select class="page-size-select" id="pageSize" onchange="changePage(1)">
           <option value="15">15</option>
@@ -814,9 +860,9 @@ tbody td { padding: 10px 14px; color: var(--text-primary); vertical-align: middl
         </select>
       </div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
+    <div class="table-wrap" id="auditTableWrap">
+      <table id="auditTable">
+        <thead id="auditThead">
           <tr>
             <th onclick="sortTable('rank')">#</th>
             <th onclick="sortTable('party')">Party</th>
@@ -846,7 +892,7 @@ tbody td { padding: 10px 14px; color: var(--text-primary); vertical-align: middl
 <div class="footer">
   GP ↔ GENEX Audit Dashboard · Quality Assurance Platform ·
   Data: <a href="#" id="footerSheetLink" target="_blank">Google Sheet</a> ·
-  Auto-refreshes every 5 minutes
+  Auto-refreshes every 1 hour
 </div>
 
 <!-- AGENT DETAIL MODAL -->
@@ -876,7 +922,7 @@ const SHEET_ID         = '12Szammh5AMNEC238E4gtUjhAM2enXCWLGIDzWtOb0NE';
 const INBOUND_SHEET    = 'INBOUND_DUMP';
 const DIGITAL_SHEET    = 'DIGITAL_DUMP';
 const GVIZ_TIMEOUT_MS  = 60000;
-const AUTO_REFRESH_SEC = 300;                   // 5 minutes
+const AUTO_REFRESH_SEC = 3600;                  // 1 hour
 
 // CE% targets per skill
 const TGT = {
@@ -1088,7 +1134,8 @@ function aggregate(rows) {
     p.rtcP += r.rtcP;    p.rtcF += r.rtcF;
 
     // Agent tracking
-    if (!p.agents[r.agentId]) p.agents[r.agentId] = { id: r.agentId, tl: r.tl, ceErrors: 0, empPct: null, empP: 0, empF: 0 };
+    if (!p.agents[r.agentId]) p.agents[r.agentId] = { id: r.agentId, tl: r.tl, audits: 0, ceErrors: 0, empPct: null, empP: 0, empF: 0 };
+    p.agents[r.agentId].audits++;
     p.agents[r.agentId].empP += r.empPass;
     p.agents[r.agentId].empF += r.empFail;
     if (r.result === 'Fail') p.agents[r.agentId].ceErrors++;
@@ -1592,11 +1639,16 @@ function closeParamModalOutside(e) { if (e.target === document.getElementById('p
 //  LEADERBOARDS
 // ═══════════════════════════════════════════
 function updateLeaderboards() {
-  // Top CE Offenders (most fails)
-  renderErrLB('lbGPCE',  'gp');
-  renderErrLB('lbGXCE',  'genex');
-  renderEmpLB('lbGPEmp', 'gp');
-  renderEmpLB('lbGXEmp', 'genex');
+  // Row 1: CE Offenders + Empathy Offenders
+  renderErrLB('lbGPCE',      'gp');
+  renderErrLB('lbGXCE',      'genex');
+  renderEmpOffLB('lbGPEmpOff', 'gp');
+  renderEmpOffLB('lbGXEmpOff', 'genex');
+  // Row 2: CE Scorers + Empathy Scorers
+  renderCEScoreLB('lbGPCEScore', 'gp');
+  renderCEScoreLB('lbGXCEScore', 'genex');
+  renderEmpLB('lbGPEmp',    'gp');
+  renderEmpLB('lbGXEmp',    'genex');
 }
 
 function renderErrLB(elId, partyKey) {
@@ -1634,14 +1686,19 @@ function renderEmpLB(elId, partyKey) {
     if (!p) return;
     Object.values(p.agents).forEach(a => {
       if (a.empPct === null) return;
-      if (!agents[a.id]) agents[a.id] = { id: a.id, tl: a.tl, empPct: a.empPct, skills: new Set() };
+      if (!agents[a.id]) agents[a.id] = { id: a.id, tl: a.tl, empPcts: [], skills: new Set() };
+      agents[a.id].empPcts.push(a.empPct);
       agents[a.id].skills.add(skill);
     });
   });
-  const sorted = Object.values(agents).sort((a,b) => b.empPct - a.empPct).slice(0, 10);
+  // Only show agents with avg empathy >= 80% (top scorers)
+  const sorted = Object.values(agents)
+    .map(a => ({ ...a, avgEmp: a.empPcts.reduce((s,v)=>s+v,0) / a.empPcts.length }))
+    .filter(a => a.avgEmp >= 80)
+    .sort((a,b) => b.avgEmp - a.avgEmp).slice(0, 10);
 
   const el = document.getElementById(elId);
-  if (!sorted.length) { el.innerHTML = '<div class="empty-state">No empathy data</div>'; return; }
+  if (!sorted.length) { el.innerHTML = '<div class="empty-state">No agents at ≥80% empathy</div>'; return; }
   el.innerHTML = sorted.map((a,i) => `
     <div class="lb-item">
       <div class="rank-badge ${i===0?'r1':i===1?'r2':i===2?'r3':'rN'}">${i+1}</div>
@@ -1649,14 +1706,89 @@ function renderEmpLB(elId, partyKey) {
         <div class="lb-name">${a.id}</div>
         <div class="lb-meta">${a.tl} · ${[...a.skills].join(', ')}</div>
       </div>
-      <div class="lb-bar-wrap"><div class="lb-bar" style="width:${a.empPct||0}%"></div></div>
-      <div class="lb-score-val">${a.empPct.toFixed(1)}%</div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:${a.avgEmp||0}%"></div></div>
+      <div class="lb-score-val">${a.avgEmp.toFixed(1)}%</div>
+    </div>`).join('');
+}
+
+// Top Empathy Offenders — agents below 80%, ranked bottom-to-top
+function renderEmpOffLB(elId, partyKey) {
+  const agents = {};
+  SKILLS.forEach(skill => {
+    const p = aggregated[skill]?.[partyKey];
+    if (!p) return;
+    Object.values(p.agents).forEach(a => {
+      if (a.empPct === null) return;
+      if (!agents[a.id]) agents[a.id] = { id: a.id, tl: a.tl, empPcts: [], skills: new Set() };
+      agents[a.id].empPcts.push(a.empPct);
+      agents[a.id].skills.add(skill);
+    });
+  });
+  const sorted = Object.values(agents)
+    .map(a => ({ ...a, avgEmp: a.empPcts.reduce((s,v)=>s+v,0) / a.empPcts.length }))
+    .filter(a => a.avgEmp < 80)
+    .sort((a,b) => a.avgEmp - b.avgEmp).slice(0, 10);  // ascending: worst first
+
+  const el = document.getElementById(elId);
+  if (!sorted.length) { el.innerHTML = '<div class="empty-state">No agents below 80% empathy 🎉</div>'; return; }
+  el.innerHTML = sorted.map((a,i) => `
+    <div class="lb-item">
+      <div class="rank-badge ${i===0?'r1':i===1?'r2':i===2?'r3':'rN'}">${i+1}</div>
+      <div class="lb-info">
+        <div class="lb-name">${a.id}</div>
+        <div class="lb-meta">${a.tl} · ${[...a.skills].join(', ')}</div>
+      </div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:${a.avgEmp||0}%;background:linear-gradient(90deg,var(--red),var(--pink))"></div></div>
+      <div class="lb-score-val" style="color:var(--red)">${a.avgEmp.toFixed(1)}%</div>
+    </div>`).join('');
+}
+
+// Top CE Scorers — agents with 100% CE (zero errors)
+function renderCEScoreLB(elId, partyKey) {
+  const agents = {};
+  SKILLS.forEach(skill => {
+    const p = aggregated[skill]?.[partyKey];
+    if (!p) return;
+    Object.values(p.agents).forEach(a => {
+      if (!agents[a.id]) agents[a.id] = { id: a.id, tl: a.tl, audits: 0, errors: 0, skills: new Set() };
+      agents[a.id].audits += a.audits || 0;
+      agents[a.id].errors += a.ceErrors || 0;
+      agents[a.id].skills.add(skill);
+    });
+  });
+  const sorted = Object.values(agents)
+    .filter(a => a.audits > 0 && a.errors === 0)
+    .sort((a,b) => b.audits - a.audits).slice(0, 10);
+
+  const el = document.getElementById(elId);
+  if (!sorted.length) { el.innerHTML = '<div class="empty-state">No agents with 100% CE</div>'; return; }
+  el.innerHTML = sorted.map((a,i) => `
+    <div class="lb-item">
+      <div class="rank-badge ${i===0?'r1':i===1?'r2':i===2?'r3':'rN'}">${i+1}</div>
+      <div class="lb-info">
+        <div class="lb-name">${a.id}</div>
+        <div class="lb-meta">${a.tl} · ${[...a.skills].join(', ')}</div>
+      </div>
+      <div class="lb-bar-wrap"><div class="lb-bar" style="width:100%;background:linear-gradient(90deg,var(--green),var(--teal))"></div></div>
+      <div class="lb-score-val" style="color:var(--green)">100% <span style="font-size:0.65rem;color:var(--text-muted)">(${a.audits})</span></div>
     </div>`).join('');
 }
 
 // ═══════════════════════════════════════════
-//  AUDIT TABLE
+//  AUDIT TABLE — DUAL VIEW
 // ═══════════════════════════════════════════
+let auditView = 'grouped';  // 'grouped' | 'flat'
+let expandedAgents = new Set();
+
+function setAuditView(view) {
+  auditView = view;
+  document.getElementById('btnGrouped').classList.toggle('active', view === 'grouped');
+  document.getElementById('btnFlat').classList.toggle('active', view === 'flat');
+  expandedAgents.clear();
+  currentPage = 1;
+  renderTable();
+}
+
 let _sortedRows = [];
 function sortTable(key) {
   document.querySelectorAll('thead th').forEach(th => th.className = '');
@@ -1668,7 +1800,149 @@ function sortTable(key) {
   renderTable();
 }
 
+function toggleAgentDrilldown(agentKey) {
+  if (expandedAgents.has(agentKey)) {
+    expandedAgents.delete(agentKey);
+  } else {
+    expandedAgents.add(agentKey);
+  }
+  // Toggle visibility without full re-render
+  const groupRow = document.querySelector(`tr.grouped-row[data-key="${CSS.escape(agentKey)}"]`);
+  if (groupRow) groupRow.classList.toggle('expanded', expandedAgents.has(agentKey));
+  document.querySelectorAll(`tr.drilldown-row[data-key="${CSS.escape(agentKey)}"]`).forEach(r => {
+    r.classList.toggle('visible', expandedAgents.has(agentKey));
+  });
+}
+
 function renderTable() {
+  if (auditView === 'grouped') renderGroupedTable();
+  else renderFlatTable();
+}
+
+function renderGroupedTable() {
+  const thead = document.getElementById('auditThead');
+  thead.innerHTML = `<tr>
+    <th>#</th>
+    <th onclick="sortTable('party')">Party</th>
+    <th onclick="sortTable('agentId')">Agent ID</th>
+    <th onclick="sortTable('tl')">Team Lead</th>
+    <th>Skills</th>
+    <th>Audits</th>
+    <th>CE%</th>
+    <th>Empathy%</th>
+    <th>RTC%</th>
+    <th>Pass</th>
+    <th>Fail</th>
+  </tr>`;
+
+  // Build per-agent cumulative stats from filteredRows
+  const agentMap = {};
+  filteredRows.forEach(r => {
+    const key = r.agentId + '|' + r.party;
+    if (!agentMap[key]) agentMap[key] = {
+      agentId: r.agentId, party: r.party, tl: r.tl,
+      audits: 0, pass: 0, fail: 0,
+      empPass: 0, empFail: 0, rtcP: 0, rtcF: 0,
+      skills: new Set(), months: new Set(), rows: []
+    };
+    const a = agentMap[key];
+    a.audits++; a.rows.push(r);
+    if (r.result === 'Pass') a.pass++; else a.fail++;
+    a.empPass += r.empPass; a.empFail += r.empFail;
+    a.rtcP += r.rtcP; a.rtcF += r.rtcF;
+    a.skills.add(r.skill); a.months.add(r.month);
+  });
+
+  let agents = Object.values(agentMap).map(a => {
+    a.cePct  = a.audits > 0 ? (a.pass / a.audits * 100) : null;
+    a.empPct = (a.empPass + a.empFail) > 0 ? (a.empPass / (a.empPass + a.empFail) * 100) : null;
+    a.rtcPct = (a.rtcP + a.rtcF) > 0 ? (a.rtcP / (a.rtcP + a.rtcF) * 100) : null;
+    return a;
+  });
+
+  // Sort agents
+  agents.sort((a, b) => {
+    let va, vb;
+    if (sortKey === 'agentId') { va = a.agentId.toLowerCase(); vb = b.agentId.toLowerCase(); return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va); }
+    if (sortKey === 'party')   { va = a.party.toLowerCase(); vb = b.party.toLowerCase(); return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va); }
+    if (sortKey === 'tl')      { va = a.tl.toLowerCase(); vb = b.tl.toLowerCase(); return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va); }
+    va = (sortKey === 'ce' ? a.cePct : sortKey === 'empathy' ? a.empPct : a.audits) || 0;
+    vb = (sortKey === 'ce' ? b.cePct : sortKey === 'empathy' ? b.empPct : b.audits) || 0;
+    return sortDir === 'asc' ? va - vb : vb - va;
+  });
+
+  const pageSize = parseInt(document.getElementById('pageSize').value);
+  const total = agents.length;
+  const pages = Math.ceil(total / pageSize);
+  const start = (currentPage - 1) * pageSize;
+  const end   = Math.min(start + pageSize, total);
+  const page  = agents.slice(start, end);
+
+  const tbody = document.getElementById('auditTbody');
+  if (!page.length) {
+    tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No records match your filters.</td></tr>';
+  } else {
+    let html = '';
+    page.forEach((a, i) => {
+      const key = a.agentId + '|' + a.party;
+      const isExp = expandedAgents.has(key);
+      const eClass = a.empPct !== null ? (a.empPct >= 85 ? 'bar-g' : a.empPct >= 70 ? 'bar-o' : 'bar-r') : 'bar-g';
+      html += `<tr class="grouped-row ${isExp ? 'expanded' : ''}" data-key="${key}" onclick="toggleAgentDrilldown('${key.replace(/'/g,"\\'")}')">
+        <td style="color:var(--text-muted)"><span class="expand-icon">▶</span>${start + i + 1}</td>
+        <td><span class="pill ${a.party === 'GP' ? 'pill-gp' : 'pill-gx'}">${a.party}</span></td>
+        <td style="font-weight:700;color:var(--text-primary)">${a.agentId}</td>
+        <td style="font-size:0.75rem;color:var(--text-secondary)">${a.tl}</td>
+        <td style="font-size:0.72rem;color:var(--text-muted)">${[...a.skills].join(', ')}</td>
+        <td style="font-weight:700;color:var(--blue)">${a.audits}</td>
+        <td class="${a.cePct !== null && a.cePct < 98 ? 'below-tgt-cell' : ''}">${a.cePct !== null ? a.cePct.toFixed(1)+'%' : '—'}</td>
+        <td>${fmtP(a.empPct)}<span class="mini-bar-wrap"><span class="mini-bar ${eClass}" style="width:${a.empPct||0}%"></span></span></td>
+        <td>${fmtP(a.rtcPct)}</td>
+        <td style="color:var(--green)">${a.pass}</td>
+        <td style="color:var(--red)">${a.fail}</td>
+      </tr>`;
+      // Drilldown sub-rows
+      a.rows.forEach((r, ri) => {
+        const empPct = (r.empPass + r.empFail) > 0 ? (r.empPass / (r.empPass + r.empFail) * 100) : null;
+        const rtcPct = (r.rtcP + r.rtcF) > 0 ? (r.rtcP / (r.rtcP + r.rtcF) * 100) : null;
+        const riGlobal = filteredRows.indexOf(r);
+        html += `<tr class="drilldown-row ${isExp ? 'visible' : ''}" data-key="${key}" onclick="openModal(${riGlobal})">
+          <td style="color:var(--text-muted)">${ri + 1}</td>
+          <td></td>
+          <td style="color:var(--text-muted);font-size:0.75rem">${r.agentId}</td>
+          <td style="font-size:0.75rem;color:var(--text-muted)">${r.tl}</td>
+          <td><span class="pill pill-skill" onclick="event.stopPropagation();filterBySkill('${r.skill}')">${r.skill}</span></td>
+          <td style="font-size:0.72rem;color:var(--text-muted)">${r.channel}</td>
+          <td><span class="pill ${r.result === 'Pass' ? 'pill-pass' : 'pill-fail'}">${r.result}</span></td>
+          <td class="${r.result === 'Fail' ? 'below-tgt-cell' : ''}">${r.result === 'Pass' ? '100%' : '0%'}</td>
+          <td>${fmtP(empPct)}</td>
+          <td>${fmtP(rtcPct)}</td>
+          <td style="font-size:0.72rem;color:var(--text-muted)">${r.month}</td>
+        </tr>`;
+      });
+    });
+    tbody.innerHTML = html;
+  }
+
+  document.getElementById('pageInfo').textContent = `Showing ${start + 1}–${end} of ${total} agents`;
+  renderPagination(currentPage, pages);
+}
+
+function renderFlatTable() {
+  const thead = document.getElementById('auditThead');
+  thead.innerHTML = `<tr>
+    <th onclick="sortTable('rank')">#</th>
+    <th onclick="sortTable('party')">Party</th>
+    <th onclick="sortTable('agentId')">Agent ID</th>
+    <th onclick="sortTable('tl')">Team Lead</th>
+    <th onclick="sortTable('skill')">Skill</th>
+    <th onclick="sortTable('channel')">Channel</th>
+    <th onclick="sortTable('result')">Result</th>
+    <th onclick="sortTable('ce')">CE%</th>
+    <th onclick="sortTable('empathy')">Empathy%</th>
+    <th onclick="sortTable('rtc')">RTC%</th>
+    <th onclick="sortTable('month')">Month</th>
+  </tr>`;
+
   const pageSize = parseInt(document.getElementById('pageSize').value);
   _sortedRows = [...filteredRows].sort((a,b) => {
     let va = a[sortKey], vb = b[sortKey];
@@ -1687,7 +1961,7 @@ function renderTable() {
   const page  = _sortedRows.slice(start, end);
 
   const tbody = document.getElementById('auditTbody');
-  const tgt   = 98; // general target fallback
+  const tgt   = 98;
   if (!page.length) {
     tbody.innerHTML = '<tr><td colspan="11" class="empty-state">No records match your filters.</td></tr>';
   } else {
@@ -1715,6 +1989,10 @@ function renderTable() {
   }
 
   document.getElementById('pageInfo').textContent = `Showing ${start + 1}–${end} of ${total} records`;
+  renderPagination(currentPage, pages);
+}
+
+function renderPagination(currentPage, pages) {
   const pageBtns = document.getElementById('pageBtns');
   let btns = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage===1?'disabled':''}>‹</button>`;
   getPageRange(currentPage, pages).forEach(p => {
