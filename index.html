@@ -613,6 +613,13 @@ tr.drilldown-row td:first-child { padding-left: 40px; color: var(--text-muted); 
       <option value="Email">Email</option>
       <option value="Social Media">Social Media</option>
       <option value="GPFI &amp; ALO">GPFI &amp; ALO</option>
+      <optgroup label="── Digital (Skitto / WhatsApp) ──" style="color:var(--text-muted)">
+      <option value="Skitto_Email">Skitto_Email</option>
+      <option value="Skitto_Messenger">Skitto_Messenger</option>
+      <option value="Skitto_Social Media">Skitto_Social Media</option>
+      <option value="Tier_Whatsapp">Tier_Whatsapp</option>
+      <option value="Whatsapp">Whatsapp</option>
+      </optgroup>
     </select>
   </div>
   <div class="filter-sep"></div>
@@ -928,12 +935,14 @@ const AUTO_REFRESH_SEC = 3600;                  // 1 hour
 // CE% targets per skill
 const TGT = {
   'Mass': 98, 'Premium': 98.5, 'KCP': 99, 'Retailer': 99,
-  '158': 99, 'HR Helpline': 99, 'RM': 99, 'Second Tier':99, 
+  '158': 99, 'HR Helpline': 99, 'RM': 99, 'Second Tier':99,
   'Live Chat': 98, 'Email': 99, 'Social Media': 99,
-  'GPFI & ALO': 99
+  'GPFI & ALO': 99,
+  'Skitto_Email': 99, 'Skitto_Messenger': 99, 'Skitto_Social Media': 99,
+  'Tier_Whatsapp': 99, 'Whatsapp': 99
 };
 const SKILLS  = Object.keys(TGT);
-const COLORS  = ['#58a6ff','#3fb950','#e3b341','#f85149','#bc8cff','#39d353','#79c0ff','#ff7b72','#ffa657','#d2a8ff'];
+const COLORS  = ['#58a6ff','#3fb950','#e3b341','#f85149','#bc8cff','#39d353','#79c0ff','#ff7b72','#ffa657','#d2a8ff','#f0883e','#56d364','#a5d6ff','#ffa198','#7ee787','#db6d28','#388bfd'];
 const COLORS_A= COLORS.map(c => c + '55');
 
 // Column map for INBOUND_DUMP (0-indexed, adapt to your sheet)
@@ -1044,12 +1053,13 @@ function normalizeSkill(skillRaw) {
   if (!raw) return null;
 
   const aliases = {
-    'Skitto_Email': 'Email',
-    'Skitto_Social Media': 'Social Media',
-    'Skitto_Messenger': 'Social Media',
-    'WhatsApp': 'Live Chat',
+    // Legacy / variant spellings — keep mapping to canonical names
+    'WhatsApp': 'Whatsapp',
     '2nd Tier': 'Second Tier',
     'Tier 2': 'Second Tier'
+    // NOTE: Skitto_Email, Skitto_Messenger, Skitto_Social Media,
+    //       Tier_Whatsapp, and Whatsapp are now their own distinct skills.
+    //       No aliasing needed for them.
   };
 
   const mapped = aliases[raw] || raw;
