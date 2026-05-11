@@ -630,6 +630,8 @@ tr.drilldown-row td:first-child { padding-left: 40px; color: var(--text-muted); 
         <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="RM" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> RM</label>
         <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Second Tier" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Second Tier</label>
         <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="GPFI & ALO" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> GPFI &amp; ALO</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Tier_Whatsapp" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Tier_Whatsapp</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Skitto_121" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Skitto_121</label>
         <div style="padding:4px 14px 2px;font-size:0.65rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.8px;border-top:1px solid var(--border-muted);margin-top:2px">Digital</div>
         <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Live Chat" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Live Chat</label>
         <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Email" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Email</label>
@@ -637,7 +639,6 @@ tr.drilldown-row td:first-child { padding-left: 40px; color: var(--text-muted); 
         <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Skitto_Email" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Skitto_Email</label>
         <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Skitto_Messenger" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Skitto_Messenger</label>
         <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Skitto_Social Media" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Skitto_Social Media</label>
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Tier_Whatsapp" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Tier_Whatsapp</label>
         <label style="display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer;font-size:0.82rem" onclick="event.stopPropagation()"><input type="checkbox" class="skill-chk" value="Whatsapp" onchange="onSkillChkChange()" style="accent-color:var(--blue)"> Whatsapp</label>
       </div>
     </div>
@@ -949,6 +950,7 @@ tr.drilldown-row td:first-child { padding-left: 40px; color: var(--text-muted); 
 const SHEET_ID         = '12Szammh5AMNEC238E4gtUjhAM2enXCWLGIDzWtOb0NE';
 const INBOUND_SHEET    = 'INBOUND_DUMP';
 const DIGITAL_SHEET    = 'DIGITAL_DUMP';
+const SKITTO121_SHEET  = 'SKITTO_121_DUMP';
 const GVIZ_TIMEOUT_MS  = 60000;
 const AUTO_REFRESH_SEC = 3600;                  // 1 hour
 
@@ -956,10 +958,11 @@ const AUTO_REFRESH_SEC = 3600;                  // 1 hour
 const TGT = {
   'Mass': 98, 'Premium': 98.5, 'KCP': 99, 'Retailer': 99,
   '158': 99, 'HR Helpline': 99, 'RM': 99, 'Second Tier':99,
+  'Tier_Whatsapp': 99, 'Skitto_121': 99,
   'Live Chat': 98, 'Email': 99, 'Social Media': 99,
   'GPFI & ALO': 99,
   'Skitto_Email': 99, 'Skitto_Messenger': 99, 'Skitto_Social Media': 99,
-  'Tier_Whatsapp': 99, 'Whatsapp': 99
+  'Whatsapp': 99
 };
 const SKILLS  = Object.keys(TGT);
 const COLORS  = ['#58a6ff','#3fb950','#e3b341','#f85149','#bc8cff','#39d353','#79c0ff','#ff7b72','#ffa657','#d2a8ff','#f0883e','#56d364','#a5d6ff','#ffa198','#7ee787','#db6d28','#388bfd'];
@@ -979,6 +982,28 @@ const DIGITAL_MAP = {
   result: 219, empPass: 217, empFail: 218, rtcP: 222, rtcF: 223,
   emp: { "Warm Welcome": 43, "A&U": 46, "Eff Comm": 49, "Attentive": 52, "Time Mgt": 55, "Personalization": 58, "Emotional": 61, "Closing": 64 },
   ce: { "Identification": 70, "Information": 73, "Execution": 76, "Misbehavior": 82, "Improper Resp": 85, "Hold": 88, "Hangup": 91, "Unauth Exec": 97, "Unauth Info": 100, "Verification": 103, "Access": 106, "Product": 112, "Process": 115, "Info-NonAgent": 118, "System": 121, "Perf": 124, "Bot": 127 }
+};
+
+// Column map for SKITTO_121_DUMP (0-indexed)
+// Agent ID: GM(194), TL: GN(195), Skill: GV(203), Month: GW(204) or Date: A(0)
+// EmpPass: GO(196), EmpFail: GP(197), CriticalError/result: GQ(198)
+// RTC Pass: GT(201), RTC Fail: GU(202)
+// NOTE: GP does NOT audit empathy for Skitto_121 — only GENEX does.
+const SKITTO121_MAP = {
+  date: 0, skill: 203, agentId: 194, tl: 195,
+  result: 198, empPass: 196, empFail: 197, rtcP: 201, rtcF: 202,
+  emp: {
+    "Warm Greetings": 28, "Acknowledgement": 31, "Speech Clarity": 34,
+    "Proper Listening": 37, "Time/Hold Mgt": 40, "Personalization": 43,
+    "Emotional Tone": 46, "Closing Courtesy": 49
+  },
+  ce: {
+    "Identification": 58, "Information": 61, "Execution": 64,
+    "Misbehave": 70, "Improper Resp": 73, "Hold": 76,
+    "Hangup": 79, "Unauth Exec": 85, "Unauth Info": 88,
+    "Verification": 91, "Access": 94, "Product": 100,
+    "Process": 103, "Info-NonAgent": 106, "System": 109, "Perf": 112
+  }
 };
 
 // ═══════════════════════════════════════════
@@ -1076,7 +1101,8 @@ function normalizeSkill(skillRaw) {
     // Legacy / variant spellings — keep mapping to canonical names
     'WhatsApp': 'Whatsapp',
     '2nd Tier': 'Second Tier',
-    'Tier 2': 'Second Tier'
+    'Tier 2': 'Second Tier',
+    'Skitto 121': 'Skitto_121'
     // NOTE: Skitto_Email, Skitto_Messenger, Skitto_Social Media,
     //       Tier_Whatsapp, and Whatsapp are now their own distinct skills.
     //       No aliasing needed for them.
@@ -1127,12 +1153,81 @@ function parseRows2D(grid, map, channel) {
     });
 
     rows.push({
-      month, party, skill, channel,
+      month, party, skill, channel: (skill === 'Tier_Whatsapp') ? 'Inbound' : channel,
       agentId: String(row[map.agentId] || ''),
       tl: String(row[map.tl] || ''),
       result, empPass, empFail,
       ce: result === 'Pass' ? 100 : 0,
       empathy: empPct,
+      rtcP, rtcF,
+      ceParams, empParams
+    });
+  });
+  return rows;
+}
+
+// Special parser for SKITTO_121_DUMP
+// - No party column: all rows are treated as GENEX audits
+// - GP does NOT audit empathy; empPass/empFail are only meaningful for GENEX
+// - Result comes from GQ (Critical Error pass/fail)
+function parseSkitto121Rows(grid) {
+  const rows = [];
+  const map  = SKITTO121_MAP;
+  grid.forEach(row => {
+    if (!row || row.length < 50) return; // minimal sanity check
+
+    // Determine month: try date in col A first, then GW(204) as month-name fallback
+    let month = null;
+    const d = parseDate(row[0]);
+    if (d) month = MONTHS[d.getMonth()];
+    if (!month) {
+      const monthRaw = String(row[204] || '').trim();
+      if (monthRaw) {
+        const mIdx = MONTHS.findIndex(m => m.toLowerCase() === monthRaw.toLowerCase()
+          || m.toLowerCase().startsWith(monthRaw.toLowerCase().slice(0,3)));
+        if (mIdx >= 0) month = MONTHS[mIdx];
+      }
+    }
+    if (!month) return;
+
+    const agentId = String(row[map.agentId] || '').trim();
+    if (!agentId) return;
+
+    // Always Skitto_121 — GV may say "Skitto 121" or similar variants
+    const skill = normalizeSkill(String(row[map.skill] || '').trim()) || 'Skitto_121';
+
+    // Result from GQ (Critical Error): 'Pass' / 'Fail'
+    const resultRaw = String(row[map.result] || '').toLowerCase().trim();
+    const result    = resultRaw === 'pass' ? 'Pass' : resultRaw === 'fail' ? 'Fail' : null;
+    if (!result) return; // skip rows with no result
+
+    // Only GENEX audits empathy — use GO/GP columns
+    const empPass = Number(row[map.empPass]) || 0;
+    const empFail = Number(row[map.empFail]) || 0;
+
+    const rtcP = Number(row[map.rtcP]) || 0;
+    const rtcF = Number(row[map.rtcF]) || 0;
+
+    const ceParams = {}, empParams = {};
+    Object.entries(map.ce).forEach(([k, ci]) => {
+      const v = String(row[ci] || '').toLowerCase();
+      ceParams[k] = v === 'pass' ? 'Pass' : v === 'fail' ? 'Fail' : null;
+    });
+    Object.entries(map.emp).forEach(([k, ci]) => {
+      const v = String(row[ci] || '').toLowerCase();
+      empParams[k] = v === 'pass' ? 'Pass' : v === 'fail' ? 'Fail' : null;
+    });
+
+    rows.push({
+      month,
+      party: 'GENEX',   // Skitto_121 is audited by GENEX only
+      skill,
+      channel: 'Inbound',
+      agentId,
+      tl: String(row[map.tl] || ''),
+      result, empPass, empFail,
+      ce: result === 'Pass' ? 100 : 0,
+      empathy: (empPass + empFail) > 0 ? (empPass / (empPass + empFail) * 100) : null,
       rtcP, rtcF,
       ceParams, empParams
     });
@@ -1217,24 +1312,27 @@ async function fetchData() {
   icon.style.animation = 'spin 0.8s linear infinite';
 
   try {
-    const [inboundTable, digitalTable] = await Promise.all([
+    const [inboundTable, digitalTable, skitto121Table] = await Promise.all([
       gvizFetch(INBOUND_SHEET, 1),
-      gvizFetch(DIGITAL_SHEET, 1)
+      gvizFetch(DIGITAL_SHEET, 1),
+      gvizFetch(SKITTO121_SHEET, 1).catch(e => { console.warn('SKITTO_121_DUMP fetch failed:', e.message); return null; })
     ]);
 
-    const inboundGrid  = gvizTo2D(inboundTable);
-    const digitalGrid  = gvizTo2D(digitalTable);
+    const inboundGrid   = gvizTo2D(inboundTable);
+    const digitalGrid   = gvizTo2D(digitalTable);
+    const skitto121Grid = skitto121Table ? gvizTo2D(skitto121Table) : [];
 
-    const inboundRows  = parseRows2D(inboundGrid, INBOUND_MAP, 'Inbound');
-    const digitalRows  = parseRows2D(digitalGrid, DIGITAL_MAP, 'Digital');
+    const inboundRows   = parseRows2D(inboundGrid, INBOUND_MAP, 'Inbound');
+    const digitalRows   = parseRows2D(digitalGrid, DIGITAL_MAP, 'Digital');
+    const skitto121Rows = skitto121Grid.length ? parseSkitto121Rows(skitto121Grid) : [];
 
-    rawRows = [...inboundRows, ...digitalRows];
+    rawRows = [...inboundRows, ...digitalRows, ...skitto121Rows];
 
     if (!rawRows.length) throw new Error('No audit rows parsed — live sheet layout appears different from the parser');
 
     document.getElementById('errorBanner').style.display = 'none';
     document.getElementById('footerSheetLink').href = `https://docs.google.com/spreadsheets/d/${SHEET_ID}`;
-    showToast(`✅ Loaded ${rawRows.length} audit records`, 'success');
+    showToast(`✅ Loaded ${rawRows.length} records (Inbound:${inboundRows.length} Digital:${digitalRows.length} Skitto121:${skitto121Rows.length})`, 'success');
 
     // Auto-select latest month
     const monthSel = document.getElementById('fMonth');
